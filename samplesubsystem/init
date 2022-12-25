@@ -1,0 +1,3 @@
+#!/bin/sh
+
+echo "HELLO_WORD='hello from sub systeml'; export HELLO_WORD"

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ -L $0 ]; then
+    CUSTOMSHELL_ROOT=$(cd $(dirname $(readlink $0)); pwd)
+else
+    CUSTOMSHELL_ROOT=$(cd $(dirname $0); pwd)
+fi
+
+export CUSTOMSHELL_ROOT;
+
+bash --rcfile $CUSTOMSHELL_ROOT/bashrc

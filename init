@@ -1,0 +1,67 @@
+#!/bin/sh
+
+if [ -L $0 ]; then
+    CUSTOMSHELL_ROOT=$(dirname $(readlink $0))
+else
+    CUSTOMSHELL_ROOT=$(cd $(dirname $0); pwd)
+fi
+
+export CUSTOMSHELL_ROOT
+
+readonly SUB_SYSTEMS='samplesubsystem'
+
+initialize () {
+    cd $CUSTOMSHELL_ROOT
+
+    SYSTEM_DIRECTORIES='bin commands var var/store var/state var/tmp var/log'
+    for TARGET in $SYSTEM_DIRECTORIES; do
+
+        if [ ! -e $TARGET ]; then
+            mkdir $TARGET
+        fi
+
+    done
+
+    [ -e $CUSTOMSHELL_ROOT/.env ] && . $CUSTOMSHELL_ROOT/.env
+}
+
+stdout_config_codes () {
+    [ -z "$CUSTOMSHELL_ROOT" ] && { echo error: variable \$CUSTOMSHELL_ROOT is empty. 1>&2; exit 1; }
+
+    echo "CUSTOMSHELL_ROOT=$CUSTOMSHELL_ROOT; export CUSTOMSHELL_ROOT"
+    echo "PATH=$CUSTOMSHELL_ROOT/commands:$CUSTOMSHELL_ROOT/bin:$PATH; export PATH"
+    [ -e $CUSTOMSHELL_ROOT/.env ] && cat $CUSTOMSHELL_ROOT/.env
+}
+
+refresh_commands_symlink () {
+
+    for FILE_NAME in $(ls $CUSTOMSHELL_ROOT/commands); do
+
+        if [ -L $CUSTOMSHELL_ROOT/commands/$FILE_NAME ]; then
+            rm -f $CUSTOMSHELL_ROOT/commands/$FILE_NAME
+        fi
+
+    done
+
+    for SUB_SYSTEM in $SUB_SYSTEMS; do
+
+        for FILE_NAME in $(ls $CUSTOMSHELL_ROOT/$SUB_SYSTEM/commands); do
+            ln -s $CUSTOMSHELL_ROOT/$SUB_SYSTEM/commands/$FILE_NAME $CUSTOMSHELL_ROOT/commands/$SUB_SYSTEM-$FILE_NAME
+        done
+
+    done
+
+}
+
+kick_subsystem_init () {
+
+    for SUB_SYSTEM in $SUB_SYSTEMS; do
+        [ -e $CUSTOMSHELL_ROOT/$SUB_SYSTEM/init ] && $CUSTOMSHELL_ROOT/$SUB_SYSTEM/init
+    done
+
+}
+
+initialize
+stdout_config_codes
+refresh_commands_symlink
+kick_subsystem_init
